@@ -65,6 +65,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     const [addDialogOpen, setAddDialogOpen] = useStateAndDelegateWithDelayOnChange<boolean>(false, dialogOpen);
     const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
     const [editValue, setEditValue] = React.useState('');
+    const [editingIndexWhenDialogOpened, setEditingIndexWhenDialogOpened] = React.useState<number | null>(null);
     const input = React.useRef<null | HTMLDivElement>(null);
     const editInput = React.useRef<null | HTMLInputElement>(null);
     const container = React.useRef<null | HTMLDivElement>(null);
@@ -170,17 +171,35 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
         const {errors, entries} = addValues(editValue, tagsResult, otherEntries, onlySelectKeys, allowDuplicateKeys);
 
         if (errors.length > 0) {
+            // Check if the error is because the tag doesn't exist (can be created)
+            const [keySomeCase] = editValue.split(':');
+            const key = keySomeCase.toLowerCase();
+            const foundTag = tagsResult.data && tagsResult.data.tags && tagsResult.data.tags.find((tag) => tag.key === key);
+            
+            if (!foundTag && createTags && errors[0].error.includes('does not exist')) {
+                // Open dialog to create new tag
+                setCurrentValueInternal(editValue);
+                setEditingIndexWhenDialogOpened(editingIndex);
+                setAddDialogOpen(true);
+                setEditingIndex(null);
+                setEditValue('');
+                return;
+            }
+            
             showTooltipError(errors[0].error);
+            // Don't clear editing state on error - allow user to fix it
             return;
         }
 
         if (entries.length === 0) {
             showTooltipError('Invalid tag format');
+            // Don't clear editing state on error - allow user to fix it
             return;
         }
 
         if (entries.length > 1) {
             showTooltipError('Cannot edit to multiple tags');
+            // Don't clear editing state on error - allow user to fix it
             return;
         }
 
@@ -288,12 +307,25 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                 ) : null}
                 {addDialogOpen && (
                     <AddTagDialog
-                        onAdded={(tag) => trySubmit({tag, value: ''})}
+                        onAdded={(tag) => {
+                            if (editingIndexWhenDialogOpened !== null) {
+                                // We were editing a tag, replace it with the new tag
+                                const [, value] = currentValue.split(':');
+                                const newEntries = [...selectedEntries];
+                                newEntries[editingIndexWhenDialogOpened] = {tag, value: value || ''};
+                                setSelectedEntries(newEntries);
+                                setEditingIndexWhenDialogOpened(null);
+                            } else {
+                                // Normal add flow
+                                trySubmit({tag, value: ''});
+                            }
+                        }}
                         open={true}
                         initialName={currentValue.split(':')[0]}
                         close={() => {
                             setTimeout(focusInput, 50);
                             setAddDialogOpen(false);
+                            setEditingIndexWhenDialogOpened(null);
                         }}
                     />
                 )}
