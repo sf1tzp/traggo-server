@@ -150,14 +150,14 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
             return;
         }
         const tagIndex = selectedEntries.indexOf(entry);
-        selectedEntries.splice(tagIndex, 1);
-
-        setSelectedEntries(selectedEntries);
+        const newEntries = [...selectedEntries];
+        newEntries.splice(tagIndex, 1);
+        setSelectedEntries(newEntries);
     };
 
     const onTagDoubleClicked = (index: number) => {
         setEditingIndex(index);
-        setEditValue(itemLabel(selectedEntries[index], onlySelectKeys));
+        setEditValue(onlySelectKeys ? selectedEntries[index].tag.key : label(selectedEntries[index]));
     };
 
     const saveEdit = () => {
@@ -362,7 +362,7 @@ const toChips = (
                         }
                     }}
                     onBlur={saveEdit}
-                    inputRef={editInputRef}
+                    inputRef={(ref) => (editInputRef.current = ref)}
                     className={editInputClassName}
                     disableUnderline={true}
                 />
