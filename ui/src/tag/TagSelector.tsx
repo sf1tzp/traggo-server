@@ -22,6 +22,13 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
     inputRoot: {display: 'flex', flexWrap: 'wrap', cursor: 'text', width: '100%'},
     inputInput: {height: 40, minWidth: 150, flexGrow: 1},
+    editInput: {
+        margin: theme.spacing(0.5, 0.6),
+        minWidth: 150,
+        padding: '6px 12px',
+        border: '1px solid #ccc',
+        borderRadius: '16px',
+    },
     paper: {
         position: 'absolute',
         zIndex: 1,
@@ -65,6 +72,14 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     const tagsResult = useQuery<Tags>(gqlTags.Tags);
 
     const suggestions = useSuggest(tagsResult, currentValue, selectedEntries, onlySelectKeys, allowDuplicateKeys, createTags);
+
+    // Focus edit input when entering edit mode
+    React.useEffect(() => {
+        if (editingIndex !== null && editInput.current) {
+            editInput.current.focus();
+            editInput.current.select();
+        }
+    }, [editingIndex]);
 
     if (tagsResult.error || tagsResult.loading || !tagsResult.data || !tagsResult.data.tags) {
         return null;
@@ -143,13 +158,6 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     const onTagDoubleClicked = (index: number) => {
         setEditingIndex(index);
         setEditValue(itemLabel(selectedEntries[index], onlySelectKeys));
-        // Focus the edit input after state update
-        setTimeout(() => {
-            if (editInput.current) {
-                editInput.current.focus();
-                editInput.current.select();
-            }
-        }, 0);
     };
 
     const saveEdit = () => {
@@ -248,7 +256,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                         </Typography>
                     }>
                     <div ref={(ref) => (container.current = ref)} className={classes.inputRoot} onClick={focusInput}>
-                        {toChips(selectedEntries, onlySelectKeys, onTagClicked, {
+                        {toChips(selectedEntries, onlySelectKeys, onTagClicked, classes.editInput, {
                             editingIndex,
                             editValue,
                             setEditValue,
@@ -340,6 +348,7 @@ const toChips = (
     entries: TagSelectorEntry[], 
     onlySelectKeys: boolean, 
     onClick: (entry: TagSelectorEntry) => void,
+    editInputClassName: string,
     editState: EditState
 ) => {
     const {editingIndex, editValue, setEditValue, saveEdit, cancelEdit, editInputRef, onDoubleClick} = editState;
@@ -363,13 +372,7 @@ const toChips = (
                     }}
                     onBlur={saveEdit}
                     inputRef={editInputRef}
-                    style={{
-                        margin: '4px 5px',
-                        minWidth: 150,
-                        padding: '6px 12px',
-                        border: '1px solid #ccc',
-                        borderRadius: '16px',
-                    }}
+                    className={editInputClassName}
                     disableUnderline={true}
                     autoFocus
                 />
