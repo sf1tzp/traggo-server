@@ -176,7 +176,8 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
             const key = keySomeCase.toLowerCase();
             const foundTag = tagsResult.data && tagsResult.data.tags && tagsResult.data.tags.find((tag) => tag.key === key);
             
-            if (!foundTag && createTags && errors[0].error.includes('does not exist')) {
+            // If tag doesn't exist, createTags is enabled, and we have the expected error pattern
+            if (!foundTag && createTags && errors[0].error.indexOf(`'${key}' does not exist`) !== -1) {
                 // Open dialog to create new tag
                 setCurrentValueInternal(editValue);
                 setEditingIndexWhenDialogOpened(editingIndex);
@@ -310,9 +311,10 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                         onAdded={(tag) => {
                             if (editingIndexWhenDialogOpened !== null) {
                                 // We were editing a tag, replace it with the new tag
-                                const [, value] = currentValue.split(':');
+                                const parts = currentValue.split(':');
+                                const value = parts.length > 1 ? parts[1] : '';
                                 const newEntries = [...selectedEntries];
-                                newEntries[editingIndexWhenDialogOpened] = {tag, value: value || ''};
+                                newEntries[editingIndexWhenDialogOpened] = {tag, value};
                                 setSelectedEntries(newEntries);
                                 setEditingIndexWhenDialogOpened(null);
                             } else {
