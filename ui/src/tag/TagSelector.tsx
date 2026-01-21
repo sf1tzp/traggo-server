@@ -188,7 +188,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
         const newEntries = [...selectedEntries];
         newEntries[editingIndex] = entries[0];
         setSelectedEntries(newEntries);
-        
+
         setEditingIndex(null);
         setEditValue('');
         focusInput();
@@ -336,14 +336,14 @@ interface EditState {
 }
 
 const toChips = (
-    entries: TagSelectorEntry[], 
-    onlySelectKeys: boolean, 
+    entries: TagSelectorEntry[],
+    onlySelectKeys: boolean,
     onClick: (entry: TagSelectorEntry) => void,
     editInputClassName: string,
     editState: EditState
 ) => {
     const {editingIndex, editValue, setEditValue, saveEdit, cancelEdit, editInputRef, onDoubleClick} = editState;
-    
+
     return entries.map((entry, index) => {
         if (editingIndex === index) {
             // Render input field when editing
@@ -368,7 +368,7 @@ const toChips = (
                 />
             );
         }
-        
+
         return (
             <TagChip
                 key={itemLabel(entry, onlySelectKeys)}
