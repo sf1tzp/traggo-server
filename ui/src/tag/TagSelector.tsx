@@ -157,7 +157,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
 
     const onTagDoubleClicked = (index: number) => {
         setEditingIndex(index);
-        setEditValue(onlySelectKeys ? selectedEntries[index].tag.key : label(selectedEntries[index]));
+        setEditValue(itemLabel(selectedEntries[index], onlySelectKeys));
     };
 
     const saveEdit = () => {
