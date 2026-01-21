@@ -165,7 +165,9 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
             return;
         }
 
-        const {errors, entries} = addValues(editValue, tagsResult, [], onlySelectKeys, allowDuplicateKeys);
+        // Filter out the tag being edited to validate against other tags
+        const otherEntries = selectedEntries.filter((_, idx) => idx !== editingIndex);
+        const {errors, entries} = addValues(editValue, tagsResult, otherEntries, onlySelectKeys, allowDuplicateKeys);
 
         if (errors.length > 0) {
             showTooltipError(errors[0].error);
@@ -182,20 +184,9 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
             return;
         }
 
-        // Check for duplicate keys (except the one being edited)
-        const editedEntry = entries[0];
-        const isDuplicate = selectedEntries.some(
-            (entry, idx) => idx !== editingIndex && entry.tag.key === editedEntry.tag.key
-        );
-
-        if (!allowDuplicateKeys && isDuplicate) {
-            showTooltipError(`'${editedEntry.tag.key}' is already defined`);
-            return;
-        }
-
         // Update the entry
         const newEntries = [...selectedEntries];
-        newEntries[editingIndex] = editedEntry;
+        newEntries[editingIndex] = entries[0];
         setSelectedEntries(newEntries);
         
         setEditingIndex(null);
@@ -374,7 +365,6 @@ const toChips = (
                     inputRef={editInputRef}
                     className={editInputClassName}
                     disableUnderline={true}
-                    autoFocus
                 />
             );
         }
