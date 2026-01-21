@@ -19,9 +19,10 @@ interface TagChipProps {
     label: string;
     color: string;
     onClick?: () => void;
+    onDoubleClick?: () => void;
 }
 
-export const TagChip: React.FC<TagChipProps> = ({color, label, onClick}) => {
+export const TagChip: React.FC<TagChipProps> = ({color, label, onClick, onDoubleClick}) => {
     const classes = useStyles();
     const textColor = bestContrast(color, ['#fff', '#000']);
     return (
@@ -32,6 +33,7 @@ export const TagChip: React.FC<TagChipProps> = ({color, label, onClick}) => {
             style={{background: color, color: textColor}}
             label={label}
             onClick={onClick}
+            onDoubleClick={onDoubleClick}
         />
     );
 };

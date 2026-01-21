@@ -56,7 +56,10 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     const [currentValue, setCurrentValueInternal] = React.useState('');
     const [highlightedIndex, setHighlightedIndex] = React.useState<number>(0);
     const [addDialogOpen, setAddDialogOpen] = useStateAndDelegateWithDelayOnChange<boolean>(false, dialogOpen);
+    const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+    const [editValue, setEditValue] = React.useState('');
     const input = React.useRef<null | HTMLDivElement>(null);
+    const editInput = React.useRef<null | HTMLInputElement>(null);
     const container = React.useRef<null | HTMLDivElement>(null);
 
     const tagsResult = useQuery<Tags>(gqlTags.Tags);
@@ -137,6 +140,67 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
         setSelectedEntries(selectedEntries);
     };
 
+    const onTagDoubleClicked = (index: number) => {
+        setEditingIndex(index);
+        setEditValue(itemLabel(selectedEntries[index], onlySelectKeys));
+        // Focus the edit input after state update
+        setTimeout(() => {
+            if (editInput.current) {
+                editInput.current.focus();
+                editInput.current.select();
+            }
+        }, 0);
+    };
+
+    const saveEdit = () => {
+        if (editingIndex === null) {
+            return;
+        }
+
+        const {errors, entries} = addValues(editValue, tagsResult, [], onlySelectKeys, allowDuplicateKeys);
+
+        if (errors.length > 0) {
+            showTooltipError(errors[0].error);
+            return;
+        }
+
+        if (entries.length === 0) {
+            showTooltipError('Invalid tag format');
+            return;
+        }
+
+        if (entries.length > 1) {
+            showTooltipError('Cannot edit to multiple tags');
+            return;
+        }
+
+        // Check for duplicate keys (except the one being edited)
+        const editedEntry = entries[0];
+        const isDuplicate = selectedEntries.some(
+            (entry, idx) => idx !== editingIndex && entry.tag.key === editedEntry.tag.key
+        );
+
+        if (!allowDuplicateKeys && isDuplicate) {
+            showTooltipError(`'${editedEntry.tag.key}' is already defined`);
+            return;
+        }
+
+        // Update the entry
+        const newEntries = [...selectedEntries];
+        newEntries[editingIndex] = editedEntry;
+        setSelectedEntries(newEntries);
+        
+        setEditingIndex(null);
+        setEditValue('');
+        focusInput();
+    };
+
+    const cancelEdit = () => {
+        setEditingIndex(null);
+        setEditValue('');
+        focusInput();
+    };
+
     const onKeyDown = (event: React.KeyboardEvent) => {
         if (!currentValue && selectedEntries.length && event.key === 'Backspace') {
             event.preventDefault();
@@ -184,7 +248,15 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                         </Typography>
                     }>
                     <div ref={(ref) => (container.current = ref)} className={classes.inputRoot} onClick={focusInput}>
-                        {toChips(selectedEntries, onlySelectKeys, onTagClicked)}
+                        {toChips(selectedEntries, onlySelectKeys, onTagClicked, {
+                            editingIndex,
+                            editValue,
+                            setEditValue,
+                            saveEdit,
+                            cancelEdit,
+                            editInputRef: editInput,
+                            onDoubleClick: onTagDoubleClicked,
+                        })}
                         <Input
                             margin="none"
                             value={currentValue}
@@ -254,13 +326,64 @@ const Item: React.FC<ItemProps> = ({entry, selected, onlySelectKeys, onClick}) =
     );
 };
 
-const toChips = (entries: TagSelectorEntry[], onlySelectKeys: boolean, onClick: (entry: TagSelectorEntry) => void) => {
-    return entries.map((entry) => (
-        <TagChip
-            key={itemLabel(entry, onlySelectKeys)}
-            label={itemLabel(entry, onlySelectKeys)}
-            color={entry.tag.color}
-            onClick={() => onClick(entry)}
-        />
-    ));
+interface EditState {
+    editingIndex: number | null;
+    editValue: string;
+    setEditValue: (value: string) => void;
+    saveEdit: () => void;
+    cancelEdit: () => void;
+    editInputRef: React.MutableRefObject<HTMLInputElement | null>;
+    onDoubleClick: (index: number) => void;
+}
+
+const toChips = (
+    entries: TagSelectorEntry[], 
+    onlySelectKeys: boolean, 
+    onClick: (entry: TagSelectorEntry) => void,
+    editState: EditState
+) => {
+    const {editingIndex, editValue, setEditValue, saveEdit, cancelEdit, editInputRef, onDoubleClick} = editState;
+    
+    return entries.map((entry, index) => {
+        if (editingIndex === index) {
+            // Render input field when editing
+            return (
+                <Input
+                    key={`edit-${index}`}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            saveEdit();
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelEdit();
+                        }
+                    }}
+                    onBlur={saveEdit}
+                    inputRef={editInputRef}
+                    style={{
+                        margin: '4px 5px',
+                        minWidth: 150,
+                        padding: '6px 12px',
+                        border: '1px solid #ccc',
+                        borderRadius: '16px',
+                    }}
+                    disableUnderline={true}
+                    autoFocus
+                />
+            );
+        }
+        
+        return (
+            <TagChip
+                key={itemLabel(entry, onlySelectKeys)}
+                label={itemLabel(entry, onlySelectKeys)}
+                color={entry.tag.color}
+                onClick={() => onClick(entry)}
+                onDoubleClick={() => onDoubleClick(index)}
+            />
+        );
+    });
 };
