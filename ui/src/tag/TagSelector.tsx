@@ -128,13 +128,23 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     };
 
     const onTagClicked = (entry: TagSelectorEntry) => {
-        if (!removeWhenClicked) {
+        const tagIndex = selectedEntries.indexOf(entry);
+        if (tagIndex === -1) {
             return;
         }
-        const tagIndex = selectedEntries.indexOf(entry);
-        selectedEntries.splice(tagIndex, 1);
 
-        setSelectedEntries(selectedEntries);
+        // Remove the chip from selected entries
+        const newEntries = [...selectedEntries];
+        newEntries.splice(tagIndex, 1);
+        setSelectedEntries(newEntries);
+
+        // Populate input with the chip's text for editing (unless removeWhenClicked mode)
+        if (!removeWhenClicked) {
+            setCurrentValueInternal(itemLabel(entry, onlySelectKeys));
+            setOpen(true);
+        }
+
+        focusInput();
     };
 
     const onKeyDown = (event: React.KeyboardEvent) => {
