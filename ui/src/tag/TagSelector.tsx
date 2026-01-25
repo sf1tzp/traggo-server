@@ -227,7 +227,10 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                 ) : null}
                 {addDialogOpen && (
                     <AddTagDialog
-                        onAdded={(tag) => trySubmit({tag, value: ''})}
+                        onAdded={(tag) => {
+                            const valuePart = currentValue.split(':')[1] || '';
+                            trySubmit({tag, value: valuePart});
+                        }}
                         open={true}
                         initialName={currentValue.split(':')[0]}
                         close={() => {
