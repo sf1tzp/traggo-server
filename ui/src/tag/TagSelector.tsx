@@ -128,6 +128,11 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     };
 
     const onTagClicked = (entry: TagSelectorEntry) => {
+        // Prevent overwriting text that's already being edited
+        if (currentValue) {
+            return;
+        }
+
         const tagIndex = selectedEntries.indexOf(entry);
         if (tagIndex === -1) {
             return;
