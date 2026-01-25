@@ -58,6 +58,9 @@ build-js:
 
 pre-build: build-js
 
+run-dev:
+	(cd ui && NODE_OPTIONS=--openssl-legacy-provider yarn start)
+
 build-bin-local: pre-build
 	CGO_ENABLED=1 go build -a -ldflags '${LD_FLAGS}' -tags '${TAGS}' -o ${BUILD_DIR}/traggo-server
 
