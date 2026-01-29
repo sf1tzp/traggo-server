@@ -128,13 +128,28 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
     };
 
     const onTagClicked = (entry: TagSelectorEntry) => {
-        if (!removeWhenClicked) {
+        // Prevent overwriting text that's already being edited
+        if (currentValue) {
             return;
         }
-        const tagIndex = selectedEntries.indexOf(entry);
-        selectedEntries.splice(tagIndex, 1);
 
-        setSelectedEntries(selectedEntries);
+        const tagIndex = selectedEntries.indexOf(entry);
+        if (tagIndex === -1) {
+            return;
+        }
+
+        // Remove the chip from selected entries
+        const newEntries = [...selectedEntries];
+        newEntries.splice(tagIndex, 1);
+        setSelectedEntries(newEntries);
+
+        // Populate input with the chip's text for editing (unless removeWhenClicked mode)
+        if (!removeWhenClicked) {
+            setCurrentValueInternal(itemLabel(entry, onlySelectKeys));
+            setOpen(true);
+        }
+
+        focusInput();
     };
 
     const onKeyDown = (event: React.KeyboardEvent) => {
@@ -217,7 +232,10 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                 ) : null}
                 {addDialogOpen && (
                     <AddTagDialog
-                        onAdded={(tag) => trySubmit({tag, value: ''})}
+                        onAdded={(tag) => {
+                            const valuePart = currentValue.split(':')[1] || '';
+                            trySubmit({tag, value: valuePart});
+                        }}
                         open={true}
                         initialName={currentValue.split(':')[0]}
                         close={() => {
