@@ -8,6 +8,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/traggo/server/api"
 	"github.com/traggo/server/auth"
 	"github.com/traggo/server/config"
 	"github.com/traggo/server/config/mode"
@@ -72,6 +73,7 @@ func initRouter(db *gorm.DB, conf config.Config, version model.Version) *mux.Rou
 	router := mux.NewRouter()
 	router.Use(auth.Middleware(db))
 	router.HandleFunc("/graphql", gqlHandler)
+	api.NewHandler(db).RegisterRoutes(router)
 	ui.Register(router)
 	return router
 }
